@@ -1,0 +1,46 @@
+{
+    "manifest_version": 3,
+    "name": "meet Extension",
+    "version": "1.0",
+    "description": "A simple meet extension",
+    "icons": {
+        "16": "timer.png",
+        "48": "timer.png",
+        "128": "timer.png"
+    },
+    "action": {
+        "default_icon": {
+            "16": "timer.png",
+            "24": "timer.png",
+            "32": "timer.png"
+        },
+        "default_title": "Timer",
+        "default_popup": "popup.html"
+    },
+    "permissions": [
+        "identity",
+        "identity.email",
+        "cookies",
+        "storage",
+        "alarms",
+        "notifications",
+        "action",
+        "tabs",
+        "scripting"
+    ],
+    "host_permissions": [
+        "https://*.google.com/*",
+        "https://www.googleapis.com/*",
+        "https://meet.google.com/*"
+    ],
+    "oauth2": {
+        "client_id": "950897648353-fb564p4n468e540p452rmuu73rqnr1dm.apps.googleusercontent.com",
+        "scopes": [
+            "https://www.googleapis.com/auth/userinfo.profile",
+            "https://www.googleapis.com/auth/userinfo.email"
+        ]
+    },
+    "background": {
+        "service_worker": "background.js"
+    }
+}

@@ -1,0 +1,490 @@
+body {
+    background-color: #f5f5f5;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    text-align: center;
+    width: 320px;
+    height: auto;
+    min-height: 200px;
+    padding: 20px;
+    margin: 0;
+}
+
+h1 {
+    font-size: 24px;
+    font-weight: 600;
+    margin-top: 0;
+    color: #1a73e8;
+    margin-bottom: 20px;
+}
+
+.profile-container {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.login-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #4CAF50;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 12px;
+    background-color: #f0f9f0;
+    border-radius: 20px;
+}
+
+.login-status .material-icons {
+    font-size: 18px;
+}
+
+.profile-main {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 10px;
+}
+
+.profile-picture {
+    flex-shrink: 0;
+}
+
+.profile-picture img {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 3px solid #1a73e8;
+    padding: 2px;
+}
+
+.profile-details {
+    text-align: left;
+    flex-grow: 1;
+}
+
+.profile-name, .profile-email {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.profile-name .material-icons, 
+.profile-email .material-icons {
+    color: #1a73e8;
+    font-size: 20px;
+}
+
+.profile-name span:last-child {
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.profile-email span:last-child {
+    font-size: 14px;
+    color: #666;
+}
+
+.error-message {
+    color: #d32f2f;
+    padding: 20px;
+    background: #fde7e7;
+    border-radius: 12px;
+    margin-top: 20px;
+}
+
+.sign-in-prompt {
+    margin-top: 12px;
+    font-size: 14px;
+    color: #666;
+}
+
+#timer {
+    font-size: 20px;
+    color: #1a73e8;
+    margin: 20px 0;
+    font-weight: 500;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #e0e0e0;
+    border-top: 3px solid #1a73e8;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.storage-container {
+    margin-top: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    padding: 15px;
+}
+
+.storage-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 12px;
+    color: #1a73e8;
+    font-weight: 500;
+}
+
+.storage-header .material-icons {
+    font-size: 20px;
+}
+
+.clear-storage-button {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 20px;
+    background-color: #f5f5f5;
+    color: #d32f2f;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.clear-storage-button:hover {
+    background-color: #fde7e7;
+}
+
+.clear-storage-button .material-icons {
+    font-size: 16px;
+}
+
+.storage-items {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.storage-item {
+    display: flex;
+    padding: 8px;
+    border-bottom: 1px solid #f5f5f5;
+    font-size: 14px;
+}
+
+.storage-key {
+    font-weight: 500;
+    color: #333;
+    margin-right: 8px;
+}
+
+.storage-value {
+    color: #666;
+    word-break: break-all;
+}
+
+.empty-storage {
+    text-align: center;
+    color: #666;
+    padding: 20px;
+    font-style: italic;
+}
+
+/* Add smooth scrollbar for storage items */
+.storage-items::-webkit-scrollbar {
+    width: 8px;
+}
+
+.storage-items::-webkit-scrollbar-track {
+    background: #f5f5f5;
+    border-radius: 4px;
+}
+
+.storage-items::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+}
+
+.storage-items::-webkit-scrollbar-thumb:hover {
+    background: #999;
+}
+
+.meet-container {
+    margin-top: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    padding: 15px;
+}
+
+.meet-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 12px;
+    color: #1a73e8;
+    font-weight: 500;
+}
+
+.meet-header .material-icons {
+    font-size: 20px;
+}
+
+.meet-status {
+    padding: 10px;
+}
+
+.meet-active {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    background-color: #f0f9f0;
+    border-radius: 8px;
+}
+
+.meet-inactive {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+    color: #666;
+    background-color: #f5f5f5;
+    border-radius: 8px;
+}
+
+.meet-info {
+    flex-grow: 1;
+}
+
+.meet-title {
+    font-weight: 500;
+    color: #4CAF50;
+    margin-bottom: 4px;
+}
+
+.meet-url {
+    font-size: 12px;
+    color: #666;
+    word-break: break-all;
+}
+
+.meet-active .material-icons,
+.meet-inactive .material-icons {
+    font-size: 24px;
+}
+
+.meet-participants {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 4px 0;
+    color: #1a73e8;
+    font-size: 14px;
+}
+
+.meet-participants .material-icons {
+    font-size: 18px;
+}
+
+.participants-container {
+    margin-top: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    padding: 15px;
+}
+
+.participants-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 12px;
+    color: #1a73e8;
+    font-weight: 500;
+}
+
+.participants-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.participant-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+}
+
+.participant-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.participant-email {
+    font-size: 14px;
+    color: #333;
+    word-break: break-all;
+}
+
+.participant-status {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.current-user {
+    background-color: #f8f9fa;
+    border-left: 3px solid #1a73e8;
+}
+
+.current-user-badge {
+    font-size: 12px;
+    background-color: #1a73e8;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 12px;
+    margin-left: 8px;
+}
+
+.control-button {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.control-button:hover {
+    background-color: #f1f3f4;
+}
+
+.control-button.on {
+    color: #1a73e8;
+}
+
+.control-button.off {
+    color: #d93025;
+}
+
+.control-button .material-icons {
+    font-size: 20px;
+}
+
+.previous-meeting-container {
+    margin-top: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    padding: 15px;
+}
+
+.previous-meeting-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 12px;
+    color: #1a73e8;
+    font-weight: 500;
+}
+
+.previous-meeting-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.previous-meeting-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.previous-meeting-time,
+.previous-meeting-participants,
+.previous-meeting-url {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #5f6368;
+    font-size: 14px;
+}
+
+.previous-meeting-url a {
+    color: #1a73e8;
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.previous-meeting-url a:hover {
+    text-decoration: underline;
+}
+
+.previous-participants-list {
+    max-height: 150px;
+    overflow-y: auto;
+    border-top: 1px solid #eee;
+    padding-top: 12px;
+}
+
+.previous-participant {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    color: #5f6368;
+    font-size: 14px;
+}
+
+.previous-participant .material-icons {
+    font-size: 18px;
+}
+
+.participant-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.participant-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #333;
+}
+
+
