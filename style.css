@@ -487,4 +487,27 @@ h1 {
     color: #333;
 }
 
+/* Platform-specific colors */
+.platform-teams {
+    border-left-color: #464EB8;
+}
+
+.platform-meet {
+    border-left-color: #4CAF50;
+}
+
+/* Platform indicators */
+.platform-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 8px;
+}
+
+.platform-indicator .material-icons {
+    font-size: 16px;
+}
+
 

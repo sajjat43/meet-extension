@@ -24,14 +24,15 @@
         "storage",
         "alarms",
         "notifications",
-        "action",
         "tabs",
-        "scripting"
+        "scripting",
+        "webNavigation"
     ],
     "host_permissions": [
         "https://*.google.com/*",
         "https://www.googleapis.com/*",
-        "https://meet.google.com/*"
+        "https://meet.google.com/*",
+        "*://meet.google.com/*"
     ],
     "oauth2": {
         "client_id": "950897648353-fb564p4n468e540p452rmuu73rqnr1dm.apps.googleusercontent.com",
