@@ -1,20 +1,20 @@
 {
     "manifest_version": 3,
-    "name": "meet Extension",
+    "name": "meeting Extension",
     "version": "1.0",
-    "description": "A simple meet extension",
+    "description": "A simple meeting extension",
     "icons": {
-        "16": "timer.png",
-        "48": "timer.png",
-        "128": "timer.png"
+        "16": "meet.png",
+        "48": "meet.png",
+        "128": "meet.png"
     },
     "action": {
         "default_icon": {
-            "16": "timer.png",
-            "24": "timer.png",
-            "32": "timer.png"
+            "16": "meet.png",
+            "24": "meet.png",
+            "32": "meet.png"
         },
-        "default_title": "Timer",
+        "default_title": "meet",
         "default_popup": "popup.html"
     },
     "permissions": [
