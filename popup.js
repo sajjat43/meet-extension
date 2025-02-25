@@ -469,3 +469,101 @@ function generateParticipantHTML(participant, isCurrentUser, tabId) {
         </div>
     `;
 }
+
+// Add this function to display attendance data
+function displayAttendanceData() {
+    chrome.storage.local.get('meetingAttendance', (data) => {
+        if (data.meetingAttendance) {
+            const attendanceElement = document.getElementById('attendance');
+            if (!attendanceElement) return;
+
+            let html = '<div class="attendance-container">';
+            data.meetingAttendance.forEach(meeting => {
+                html += `
+                    <div class="meeting-record">
+                        <div class="meeting-header">
+                            <span class="material-icons">event</span>
+                            <span>Meeting: ${meeting.meetingCode}</span>
+                        </div>
+                        <div class="meeting-details">
+                            <div>Start Time: ${new Date(meeting.startTime).toLocaleString()}</div>
+                            <div>Duration: ${Math.floor(meeting.duration / 60)} minutes</div>
+                            <div>Organizer: ${meeting.organizer}</div>
+                        </div>
+                        <div class="participants-list">
+                            <div class="participants-header">
+                                <span class="material-icons">people</span>
+                                <span>Participants (${meeting.participants.length})</span>
+                            </div>
+                            ${meeting.participants.map(email => `
+                                <div class="participant">
+                                    <span class="material-icons">person</span>
+                                    <span>${email}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            attendanceElement.innerHTML = html;
+        }
+    });
+}
+
+function displayParticipants() {
+    const participantsElement = document.getElementById('meet-participants');
+    if (!participantsElement) return;
+
+    chrome.storage.local.get('participantData', (data) => {
+        if (data.participantData?.participants?.length > 0) {
+            let html = `
+                <div class="participants-container">
+                    <div class="participants-header">
+                        <span class="material-icons">group</span>
+                        <span>Meeting Participants (${data.participantData.participants.length})</span>
+                        ${data.participantData.isActive ? 
+                            '<span class="active-badge">Active</span>' : 
+                            '<span class="inactive-badge">Last Known State</span>'
+                        }
+                    </div>
+                    <div class="meeting-url">${data.participantData.meetingUrl}</div>
+                    <div class="participants-list">
+            `;
+
+            data.participantData.participants.forEach(participant => {
+                html += `
+                    <div class="participant-item">
+                        <div class="participant-info">
+                            <span class="material-icons">account_circle</span>
+                            <div class="participant-details">
+                                <div class="participant-name">${participant.name}</div>
+                                <div class="participant-email">${participant.email}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `
+                    </div>
+                    <div class="last-updated">
+                        Last updated: ${new Date(data.participantData.timestamp).toLocaleString()}
+                    </div>
+                </div>
+            `;
+            participantsElement.innerHTML = html;
+        } else {
+            participantsElement.innerHTML = `
+                <div class="no-participants">
+                    <span class="material-icons">error_outline</span>
+                    <span>No participant data available</span>
+                </div>
+            `;
+        }
+    });
+}
+
+// Update display frequently
+setInterval(displayParticipants, 2000);
+displayParticipants();

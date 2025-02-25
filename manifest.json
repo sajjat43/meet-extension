@@ -38,7 +38,9 @@
         "client_id": "950897648353-fb564p4n468e540p452rmuu73rqnr1dm.apps.googleusercontent.com",
         "scopes": [
             "https://www.googleapis.com/auth/userinfo.profile",
-            "https://www.googleapis.com/auth/userinfo.email"
+            "https://www.googleapis.com/auth/userinfo.email",
+            "https://www.googleapis.com/auth/admin.reports.usage.readonly",
+            "https://www.googleapis.com/auth/admin.reports.audit.readonly"
         ]
     },
     "background": {
