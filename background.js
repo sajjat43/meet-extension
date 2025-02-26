@@ -2,19 +2,21 @@ console.log('Background script running')
 
 let counter = 0;
 
-// Store last known meeting data
+// Reset all meeting data initially
 let lastKnownMeetingData = {
     participants: [],
     meetingUrl: '',
     timestamp: '',
-    isActive: false
+    isActive: false,
+    platform: ''
 };
 
-// Store active Meet tab ID
+// Store active Meet and Teams tab IDs
 let activeMeetTabId = null;
+let activeTeamsTabId = null;
 
-// Function to turn on captions
-function turnOnCaptions(tabId) {
+// Function to turn on captions for Google Meet
+function turnOnMeetCaptions(tabId) {
     chrome.scripting.executeScript({
         target: { tabId },
         function: () => {
@@ -37,7 +39,60 @@ function turnOnCaptions(tabId) {
                     
                     if (isCaptionsOff) {
                         captionsButton.click();
-                        console.log('Captions turned on');
+                        console.log('Meet captions turned on');
+                    }
+                }
+            }
+
+            // Initial attempt
+            clickCaptions();
+
+            // Keep trying every second indefinitely
+            setInterval(clickCaptions, 1000);
+
+            // Also try when the UI updates
+            const observer = new MutationObserver(() => {
+                clickCaptions();
+            });
+
+            // Watch for UI changes
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+        }
+    });
+}
+
+// Function to turn on Teams captions
+function turnOnTeamsCaptions(tabId) {
+    chrome.scripting.executeScript({
+        target: { tabId },
+        function: () => {
+            function clickCaptions() {
+                // More comprehensive selectors for Teams captions button
+                const captionsSelectors = [
+                    '[data-tid="toggle-captions"]',
+                    '[data-tid="toggle-subtitles"]',
+                    '[aria-label*="Turn on captions"]',
+                    '[aria-label*="turn on subtitles"]',
+                    '[title*="Turn on captions"]',
+                    '[title*="turn on subtitles"]',
+                    'button[name*="captions"]',
+                    'button[name*="subtitles"]'
+                ];
+
+                const captionsButton = document.querySelector(captionsSelectors.join(','));
+
+                if (captionsButton) {
+                    const isCaptionsOff = 
+                        captionsButton.getAttribute('aria-label')?.toLowerCase().includes('turn on') ||
+                        captionsButton.getAttribute('title')?.toLowerCase().includes('turn on') ||
+                        captionsButton.getAttribute('name')?.toLowerCase().includes('turn on');
+                    
+                    if (isCaptionsOff) {
+                        captionsButton.click();
+                        console.log('Teams captions turned on');
                     }
                 }
             }
@@ -131,8 +186,8 @@ function getParticipantDetails(tabId) {
     });
 }
 
-// Function to check if in meeting
-function checkForActiveMeeting(tabId) {
+// Function to check if in a Google Meet meeting
+function checkForActiveMeetMeeting(tabId) {
     chrome.scripting.executeScript({
         target: { tabId },
         function: () => {
@@ -150,8 +205,129 @@ function checkForActiveMeeting(tabId) {
         if (results?.[0]?.result?.inMeeting) {
             activeMeetTabId = tabId;
             lastKnownMeetingData.isActive = true;
-            turnOnCaptions(tabId);
+            turnOnMeetCaptions(tabId);
             getParticipantDetails(tabId);
+        }
+    });
+}
+
+// Function to check if URL is a Teams meeting URL
+function isTeamsMeetingUrl(url) {
+    // Specific pattern for your meeting URL
+    const meetingIdPattern = /teams\.live\.com\/meet\/(\d+)/;
+    return url && meetingIdPattern.test(url);
+}
+
+// Function to get Teams meeting status
+function getTeamsMeetingStatus(tabId) {
+    chrome.scripting.executeScript({
+        target: { tabId },
+        function: () => {
+            function isInMeeting() {
+                // Check for Teams live specific elements
+                const meetingIndicators = {
+                    // Video elements specific to Teams live
+                    video: document.querySelector([
+                        'video',
+                        '.video-element',
+                        '.ts-video-element',
+                        '[class*="video-state"]'
+                    ].join(',')),
+
+                    // Meeting controls for Teams live
+                    controls: document.querySelector([
+                        '.ts-calling-screen',
+                        '.ts-meeting-panel',
+                        '.calling-controls',
+                        '[class*="control-bar"]'
+                    ].join(',')),
+
+                    // Participant elements
+                    participants: document.querySelector([
+                        '.ts-participant',
+                        '.participant-item',
+                        '.roster-list',
+                        '[class*="participant"]'
+                    ].join(','))
+                };
+
+                // Log detection results
+                console.log('Teams Live Meeting Detection:', {
+                    hasVideo: !!meetingIndicators.video,
+                    hasControls: !!meetingIndicators.controls,
+                    hasParticipants: !!meetingIndicators.participants,
+                    url: window.location.href
+                });
+
+                // Consider in meeting if we have any of these indicators
+                return Object.values(meetingIndicators).some(el => el !== null);
+            }
+
+            function getParticipants() {
+                const participants = new Set();
+
+                // Teams live specific participant selectors
+                const selectors = [
+                    '.ts-participant',
+                    '.participant-item',
+                    '[class*="participant-name"]',
+                    '[class*="attendee-name"]'
+                ];
+
+                selectors.forEach(selector => {
+                    document.querySelectorAll(selector).forEach(el => {
+                        const name = el.textContent.trim();
+                        if (name && name.length > 1) {
+                            participants.add(name);
+                        }
+                    });
+                });
+
+                return Array.from(participants)
+                    .filter(name => 
+                        name.length > 1 && 
+                        !name.includes('More') &&
+                        !name.includes('Guest'))
+                    .map(name => ({
+                        name,
+                        email: name.includes('@') ? name : ''
+                    }));
+            }
+
+            return {
+                inMeeting: isInMeeting(),
+                participants: getParticipants(),
+                meetingUrl: window.location.href,
+                timestamp: new Date().toISOString()
+            };
+        }
+    }, (results) => {
+        if (results?.[0]?.result) {
+            const { inMeeting, participants, meetingUrl, timestamp } = results[0].result;
+
+            if (inMeeting) {
+                lastKnownMeetingData = {
+                    participants,
+                    meetingUrl,
+                    timestamp,
+                    isActive: true,
+                    platform: 'teams'
+                };
+                activeTeamsTabId = tabId;
+            } else {
+                lastKnownMeetingData = {
+                    participants: [],
+                    meetingUrl: '',
+                    timestamp: '',
+                    isActive: false,
+                    platform: ''
+                };
+                activeTeamsTabId = null;
+            }
+
+            chrome.storage.local.set({ 
+                participantData: lastKnownMeetingData 
+            });
         }
     });
 }
@@ -159,76 +335,89 @@ function checkForActiveMeeting(tabId) {
 // Listen for extension icon click
 chrome.action.onClicked.addListener((tab) => {
     if (tab.url?.includes('meet.google.com')) {
-        turnOnCaptions(tab.id);
+        turnOnMeetCaptions(tab.id);
     }
 });
 
-// Check when URL changes within a tab
+// Monitor tab updates
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     if (tab.url?.includes('meet.google.com')) {
-        turnOnCaptions(tabId);
-        checkForActiveMeeting(tabId);
+        checkForActiveMeetMeeting(tabId);
+    } else if (isTeamsMeetingUrl(tab.url)) {
+        getTeamsMeetingStatus(tabId);
     }
 });
 
-// Track tab switching
+// Monitor tab activation
 chrome.tabs.onActivated.addListener((activeInfo) => {
-    chrome.tabs.get(activeInfo.tabId, (tab) => {
-        if (tab.url?.includes('meet.google.com')) {
-            turnOnCaptions(tab.id);
-        }
-    });
-    
-    if (lastKnownMeetingData.participants.length > 0) {
-        chrome.storage.local.set({ 
-            participantData: lastKnownMeetingData 
-        }, () => {
-            console.log('Maintained participants on tab switch:', lastKnownMeetingData.participants.length);
-        });
-    }
-    
     if (activeMeetTabId) {
         getParticipantDetails(activeMeetTabId);
     }
+    if (activeTeamsTabId) {
+        turnOnTeamsCaptions(activeTeamsTabId);
+    }
+    chrome.tabs.get(activeInfo.tabId, (tab) => {
+        if (tab && isTeamsMeetingUrl(tab.url)) {
+            getTeamsMeetingStatus(tab.id);
+        }
+    });
 });
 
-// Check captions more frequently
+// Regular status check
 setInterval(() => {
-    if (activeMeetTabId) {
-        chrome.tabs.get(activeMeetTabId, (tab) => {
-            if (!chrome.runtime.lastError && tab) {
-                turnOnCaptions(activeMeetTabId);
+    if (activeTeamsTabId) {
+        chrome.tabs.get(activeTeamsTabId, (tab) => {
+            if (!chrome.runtime.lastError && tab && isTeamsMeetingUrl(tab.url)) {
+                getTeamsMeetingStatus(activeTeamsTabId);
+            } else {
+                lastKnownMeetingData = {
+                    participants: [],
+                    meetingUrl: '',
+                    timestamp: '',
+                    isActive: false,
+                    platform: ''
+                };
+                chrome.storage.local.set({ participantData: lastKnownMeetingData });
+                activeTeamsTabId = null;
             }
         });
     }
 }, 2000);
 
-// Check all Meet tabs when extension starts
+// Check all Meet and Teams tabs when extension starts
 chrome.tabs.query({ url: "*://meet.google.com/*" }, (tabs) => {
     tabs.forEach(tab => {
-        checkForActiveMeeting(tab.id);
+        checkForActiveMeetMeeting(tab.id);
+    });
+});
+
+chrome.tabs.query({ url: ["*://teams.microsoft.com/*", "*://teams.live.com/*"] }, (tabs) => {
+    tabs.forEach(tab => {
+        console.log('Checking Teams tab on startup:', tab.url);
+        getTeamsMeetingStatus(tab.id);
     });
 });
 
 // Listen for tab removal
 chrome.tabs.onRemoved.addListener((tabId) => {
     if (tabId === activeMeetTabId) {
-        if (lastKnownMeetingData.participants.length > 0) {
-            chrome.storage.local.set({ 
-                participantData: lastKnownMeetingData 
-            }, () => {
-                console.log('Maintained participants after tab close:', lastKnownMeetingData.participants.length);
-            });
-        }
         activeMeetTabId = null;
         lastKnownMeetingData.isActive = false;
+    }
+    if (tabId === activeTeamsTabId) {
+        activeTeamsTabId = null;
     }
 });
 
 // Listen for window focus changes
 chrome.windows.onFocusChanged.addListener((windowId) => {
-    if (windowId !== chrome.windows.WINDOW_ID_NONE && activeMeetTabId) {
-        turnOnCaptions(activeMeetTabId);
+    if (windowId !== chrome.windows.WINDOW_ID_NONE) {
+        if (activeMeetTabId) {
+            turnOnMeetCaptions(activeMeetTabId);
+        }
+        if (activeTeamsTabId) {
+            turnOnTeamsCaptions(activeTeamsTabId);
+        }
     }
 });
 
@@ -305,3 +494,33 @@ function processMeetingData(data, targetMeetingCode) {
             };
         });
 }
+
+// Check more frequently for Teams live meetings
+setInterval(() => {
+    chrome.tabs.query({ url: "*://teams.live.com/meet/*" }, (tabs) => {
+        tabs.forEach(tab => {
+            if (isTeamsMeetingUrl(tab.url)) {
+                getTeamsMeetingStatus(tab.id);
+            }
+        });
+    });
+}, 1000);
+
+// Monitor tab updates
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+    if (tab.url?.includes('teams.live.com/meet/')) {
+        getTeamsMeetingStatus(tabId);
+    }
+});
+
+// Clear data on startup
+chrome.runtime.onStartup.addListener(() => {
+    lastKnownMeetingData = {
+        participants: [],
+        meetingUrl: '',
+        timestamp: '',
+        isActive: false,
+        platform: ''
+    };
+    chrome.storage.local.set({ participantData: lastKnownMeetingData });
+});

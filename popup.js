@@ -10,12 +10,10 @@ let lastKnownParticipants = {
 };
 
 function updateTime() {
-    const currentTime = new Date().toLocaleTimeString();
-    timeElement.textContent = `Current time: ${currentTime}`;
+    timeElement.textContent = new Date().toLocaleTimeString();
 }
-
-updateTime();
 setInterval(updateTime, 1000);
+updateTime();
 
 // Show loading state
 emailElement.innerHTML = `
@@ -147,7 +145,7 @@ function renderPreviousMeeting(element) {
                         <span>Previous Meeting</span>
                     </div>
                     <div class="previous-meeting-content">
-                        <div class="previous-meeting-info">
+                        <div class="previous-meeting-info"></div>
                             <div class="previous-meeting-time">
                                 <span class="material-icons">schedule</span>
                                 <span>${meetingTime}</span>
@@ -567,3 +565,74 @@ function displayParticipants() {
 // Update display frequently
 setInterval(displayParticipants, 2000);
 displayParticipants();
+
+// Display Teams meeting status
+function displayTeamsStatus() {
+    const teamsElement = document.getElementById('teams');
+    if (!teamsElement) return;
+
+    chrome.storage.local.get('participantData', (data) => {
+        const meetingData = data.participantData;
+        
+        // More strict validation of meeting data
+        const isValidMeeting = 
+            meetingData?.isActive === true && 
+            meetingData?.platform === 'teams' && 
+            meetingData?.participants?.length > 0 &&
+            meetingData?.meetingUrl?.includes('/meet/') &&  // Must be a meeting URL
+            meetingData?.timestamp && // Must have recent timestamp
+            (new Date().getTime() - new Date(meetingData.timestamp).getTime()) < 5000; // Data must be recent (within 5 seconds)
+
+        if (isValidMeeting) {
+            teamsElement.innerHTML = `
+                <div class="teams-container">
+                    <div class="teams-header">
+                        <span class="material-icons">groups</span>
+                        <span>Teams Meeting Active</span>
+                        <span class="active-badge">Live</span>
+                    </div>
+                    <div class="meeting-details">
+                        <div class="participant-count">
+                            <span class="material-icons">person</span>
+                            <span>Participants: ${meetingData.participants.length}</span>
+                        </div>
+                        <div class="meeting-url">${meetingData.meetingUrl}</div>
+                        <div class="last-updated">Last updated: ${new Date(meetingData.timestamp).toLocaleString()}</div>
+                    </div>
+                    <div class="participants-list">
+                        ${meetingData.participants
+                            .filter(p => p.name && !p.name.includes('Unknown'))  // Filter out unknown participants
+                            .map(p => `
+                                <div class="participant-item">
+                                    <span class="material-icons">account_circle</span>
+                                    <span>${p.name}</span>
+                                </div>
+                            `).join('')}
+                    </div>
+                </div>
+            `;
+        } else {
+            // Clear the meeting data if it's invalid
+            chrome.storage.local.set({
+                participantData: {
+                    participants: [],
+                    meetingUrl: '',
+                    timestamp: '',
+                    isActive: false,
+                    platform: ''
+                }
+            }, () => {
+                teamsElement.innerHTML = `
+                    <div class="no-meeting">
+                        <span class="material-icons">videocam_off</span>
+                        <span>No active Teams meeting</span>
+                    </div>
+                `;
+            });
+        }
+    });
+}
+
+// Update displays less frequently to avoid false positives
+setInterval(displayTeamsStatus, 3000);
+displayTeamsStatus();

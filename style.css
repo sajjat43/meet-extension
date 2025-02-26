@@ -591,4 +591,92 @@ h1 {
     text-align: right;
 }
 
+.teams-container {
+    margin: 10px;
+    padding: 15px;
+    background-color: #F0F2FF;
+    border-radius: 8px;
+    border-left: 4px solid #464EB8;
+}
+
+.teams-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #464EB8;
+    font-weight: 500;
+    margin-bottom: 12px;
+}
+
+.active-badge {
+    background-color: #4CAF50;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    margin-left: auto;
+}
+
+.teams-details {
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+
+.participant-count {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.meeting-url {
+    color: #666;
+    font-size: 12px;
+    word-break: break-all;
+    margin-bottom: 4px;
+}
+
+.last-updated {
+    color: #888;
+    font-size: 12px;
+    font-style: italic;
+}
+
+.participants-list {
+    max-height: 200px;
+    overflow-y: auto;
+    border-top: 1px solid #ddd;
+    margin-top: 8px;
+    padding-top: 8px;
+}
+
+.participant-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    color: #333;
+}
+
+.participant-name {
+    font-size: 14px;
+}
+
+.no-meeting {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 20px;
+    color: #666;
+    background-color: #f5f5f5;
+    border-radius: 8px;
+    margin: 10px;
+}
+
+.material-icons {
+    font-size: 20px;
+}
+
 
