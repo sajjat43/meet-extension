@@ -237,18 +237,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
         participants.forEach(p => {
             html += `
-                <div class="participant-item ${p.isCurrentUser ? 'current-user' : ''}">
+                <div class="participant-item ${p.isCurrentUser ? 'current-user' : ''} ${p.isSpeaking ? 'speaking' : ''}">
                     <div class="participant-info">
                         ${p.avatarSrc ? 
-                            `<img class="participant-avatar" src="${p.avatarSrc}" alt="">` :
-                            `<span class="material-icons">account_circle</span>`
+                            `<div class="avatar-container ${p.isSpeaking ? 'speaking' : ''}">
+                                <img class="participant-avatar" src="${p.avatarSrc}" alt="">
+                                ${p.isSpeaking ? '<div class="speaking-indicator"></div>' : ''}
+                            </div>` :
+                            `<span class="material-icons ${p.isSpeaking ? 'speaking' : ''}">account_circle</span>`
                         }
                         <div class="participant-details">
                             <div class="participant-name">
                                 ${p.name}
                                 ${p.isCurrentUser ? '<span class="current-user-badge">(You)</span>' : ''}
+                                ${p.isSpeaking ? '<span class="speaking-badge">Speaking</span>' : ''}
                             </div>
+                            ${p.role ? `<div class="participant-role">${p.role}</div>` : ''}
                         </div>
+                    </div>
+                    <div class="participant-status">
+                        <span class="material-icons status-icon ${p.isMuted ? 'muted' : ''}" title="${p.isMuted ? 'Muted' : 'Unmuted'}">
+                            ${p.isMuted ? 'mic_off' : 'mic'}
+                        </span>
+                        <span class="material-icons status-icon ${p.isVideoOff ? 'video-off' : ''}" title="${p.isVideoOff ? 'Camera Off' : 'Camera On'}">
+                            ${p.isVideoOff ? 'videocam_off' : 'videocam'}
+                        </span>
                     </div>
                 </div>
             `;
@@ -276,7 +289,6 @@ document.addEventListener('DOMContentLoaded', () => {
             chrome.scripting.executeScript({
                 target: { tabId: tab.id },
                 function: () => {
-                    // Using the same selectors as background.js
                     const participantElements = document.querySelectorAll([
                         '[role="listitem"]',
                         '[data-participant-id]',
@@ -286,19 +298,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     const participants = Array.from(participantElements)
                         .filter(element => {
-                            // Get name element using multiple possible selectors
-                            const nameElement = element.querySelector([
-                                '[data-self-name]',
-                                '[data-participant-name]',
-                                '.zWGUib',  // Google Meet's name class
-                                '[class*="participant-name"]',
-                                '[class*="roster-entry-name"]'
-                            ].join(','));
-
-                            return nameElement !== null;
-                        })
-                        .map(element => {
-                            // Get name
                             const nameElement = element.querySelector([
                                 '[data-self-name]',
                                 '[data-participant-name]',
@@ -307,11 +306,36 @@ document.addEventListener('DOMContentLoaded', () => {
                                 '[class*="roster-entry-name"]'
                             ].join(','));
 
-                            // Get avatar
-                            const avatarElement = element.querySelector('.KjWwNd');
+                            return nameElement !== null;
+                        })
+                        .map(element => {
+                            const nameElement = element.querySelector([
+                                '[data-self-name]',
+                                '[data-participant-name]',
+                                '.zWGUib',
+                                '[class*="participant-name"]',
+                                '[class*="roster-entry-name"]'
+                            ].join(','));
 
-                            // Get role
+                            const avatarElement = element.querySelector('.KjWwNd');
                             const roleElement = element.querySelector('.d93U2d');
+
+                            // Updated speaking detection
+                            const isSpeaking = element.querySelector('.IisKdb')?.classList.contains('gjg47c') || 
+                                             element.querySelector('.cS7aqe')?.classList.contains('NMm5M');
+
+                            // Updated mute status detection
+                            const micButton = element.querySelector('[role="button"][aria-label*="microphone"]');
+                            const isMuted = micButton?.getAttribute('aria-label')?.toLowerCase().includes('unmute') ||
+                                          micButton?.getAttribute('data-is-muted') === 'true' ||
+                                          element.querySelector('.FTMc0c')?.classList.contains('Nep7Ue') ||
+                                          element.querySelector('.uB7U9e')?.classList.contains('ZyxbVb');
+
+                            // Updated video status detection
+                            const videoButton = element.querySelector('[role="button"][aria-label*="camera"]');
+                            const isVideoOff = videoButton?.getAttribute('aria-label')?.toLowerCase().includes('turn on') ||
+                                             videoButton?.getAttribute('data-is-muted') === 'true' ||
+                                             element.querySelector('[aria-label*="camera off"]') !== null;
 
                             const name = nameElement?.textContent?.trim() || 'Unknown';
                             const isCurrentUser = name.includes('(You)') || 
@@ -322,12 +346,11 @@ document.addEventListener('DOMContentLoaded', () => {
                                 isCurrentUser,
                                 avatarSrc: avatarElement?.src || '',
                                 role: roleElement?.textContent?.trim() || '',
-                                isMuted: !!element.querySelector('[aria-label*="muted"]'),
-                                isVideoOff: !!element.querySelector('[aria-label*="camera off"]')
+                                isMuted,
+                                isVideoOff,
+                                isSpeaking: isSpeaking && !isMuted // Only show speaking if not muted
                             };
                         });
-
-                    console.log('Found participants:', participants.length);
 
                     return {
                         count: participants.length,

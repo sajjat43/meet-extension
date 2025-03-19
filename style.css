@@ -350,6 +350,11 @@ h1 {
     border-left: 3px solid #1a73e8;
 }
 
+.participant-item.speaking {
+    background-color: rgba(26, 115, 232, 0.08);
+    border-left: 3px solid #1a73e8;
+}
+
 .participant-info {
     display: flex;
     align-items: center;
@@ -393,7 +398,7 @@ h1 {
 .participant-status {
     display: flex;
     gap: 8px;
-    color: #5f6368;
+    align-items: center;
 }
 
 .participant-status .material-icons {
@@ -617,6 +622,76 @@ h1 {
     color: #666;
     border-top: 1px solid #eee;
     text-align: right;
+}
+
+.speaking-badge {
+    background-color: #1a73e8;
+    color: white;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 8px;
+}
+
+.avatar-container {
+    position: relative;
+    width: 32px;
+    height: 32px;
+}
+
+.avatar-container.speaking::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    border: 2px solid #1a73e8;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+.speaking-indicator {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 10px;
+    height: 10px;
+    background-color: #1a73e8;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.material-icons.speaking {
+    color: #1a73e8;
+}
+
+.status-icon {
+    font-size: 20px;
+    color: #5f6368;
+}
+
+.status-icon.muted {
+    color: #ea4335;
+}
+
+.status-icon.video-off {
+    color: #ea4335;
 }
 
 
