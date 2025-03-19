@@ -336,8 +336,18 @@ h1 {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px;
-    border-bottom: 1px solid #eee;
+    padding: 8px 16px;
+    border-bottom: 1px solid #e0e0e0;
+    transition: background-color 0.2s;
+}
+
+.participant-item:hover {
+    background-color: #f8f9fa;
+}
+
+.participant-item.current-user {
+    background-color: #f8f9fa;
+    border-left: 3px solid #1a73e8;
 }
 
 .participant-info {
@@ -346,30 +356,48 @@ h1 {
     gap: 12px;
 }
 
-.participant-email {
+.participant-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+}
+
+.participant-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.participant-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font-size: 14px;
-    color: #333;
-    word-break: break-all;
+    color: #202124;
+}
+
+.current-user-badge {
+    font-size: 12px;
+    color: #5f6368;
+}
+
+.participant-role {
+    font-size: 12px;
+    color: #5f6368;
+}
+
+.participant-email {
+    font-size: 12px;
+    color: #5f6368;
 }
 
 .participant-status {
     display: flex;
     gap: 8px;
-    align-items: center;
+    color: #5f6368;
 }
 
-.current-user {
-    background-color: #f8f9fa;
-    border-left: 3px solid #1a73e8;
-}
-
-.current-user-badge {
-    font-size: 12px;
-    background-color: #1a73e8;
-    color: white;
-    padding: 2px 6px;
-    border-radius: 12px;
-    margin-left: 8px;
+.participant-status .material-icons {
+    font-size: 20px;
 }
 
 .control-button {

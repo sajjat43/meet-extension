@@ -178,240 +178,198 @@ function renderPreviousMeeting(element) {
     });
 }
 
-// Function to check Google Meet status and participants
-function checkGoogleMeet() {
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('Popup loaded');
+
     const googleMeetElement = document.getElementById('googleMeet');
     const meetParticipantsElement = document.getElementById('meet-participants');
-    const previousMeetingElement = document.getElementById('previousMeeting');
 
-    // Add error handling for missing elements
-    if (!googleMeetElement || !meetParticipantsElement || !previousMeetingElement) {
-        console.error('Required elements not found in the DOM');
+    if (!googleMeetElement || !meetParticipantsElement) {
+        console.error('Required elements not found');
         return;
     }
 
-    // Query for ALL Google Meet tabs
-    chrome.tabs.query({
-        url: ["*://meet.google.com/*"]
-    }, (tabs) => {
-        let meetHtml = `
+    function updateMeetStatus(active = false, data = null) {
+        googleMeetElement.innerHTML = `
             <div class="meet-container">
                 <div class="meet-header">
                     <span class="material-icons">videocam</span>
                     <span>Google Meet Status</span>
                 </div>
                 <div class="meet-status">
-        `;
-        
-        if (tabs && tabs.length > 0) {
-            // Execute script in ALL Meet tabs
-            Promise.all(tabs.map(tab => {
-                return new Promise((resolve) => {
-                    chrome.scripting.executeScript({
-                        target: { tabId: tab.id },
-                        func: () => {
-                            function getParticipantName(element) {
-                                const possibleNameElements = [
-                                    ...element.querySelectorAll('[role="button"]'),
-                                    ...element.querySelectorAll('.ZjFb7c, .zWGUib, .KsBfEc'),
-                                    ...element.querySelectorAll('[aria-label]'),
-                                    ...element.querySelectorAll('[data-participant-id]'),
-                                    ...element.querySelectorAll('[title]')
-                                ];
-
-                                for (const el of possibleNameElements) {
-                                    const ariaLabel = el.getAttribute('aria-label');
-                                    if (ariaLabel && !ariaLabel.includes('menu') && !ariaLabel.includes('More')) {
-                                        return ariaLabel.split('(')[0].trim();
-                                    }
-
-                                    const title = el.getAttribute('title');
-                                    if (title && !title.includes('menu') && !title.includes('More')) {
-                                        return title.split('(')[0].trim();
-                                    }
-
-                                    const text = el.textContent.trim();
-                                    if (text && !text.includes('menu') && !text.includes('More') && text.length > 1) {
-                                        return text;
-                                    }
-                                }
-
-                                return 'Unknown';
-                            }
-
-                            function getParticipantInfo(element) {
-                                // Try to get email from various attributes and elements
-                                const possibleEmailElements = [
-                                    ...element.querySelectorAll('[data-hovercard-id]'), // Gmail hovercard
-                                    ...element.querySelectorAll('[data-email]'), // Direct email attribute
-                                    ...element.querySelectorAll('[aria-label]'), // Aria label might contain email
-                                    ...element.querySelectorAll('[title]') // Title might contain email
-                                ];
-
-                                let email = '';
-                                for (const el of possibleEmailElements) {
-                                    // Check data-hovercard-id
-                                    const hovercardId = el.getAttribute('data-hovercard-id');
-                                    if (hovercardId && hovercardId.includes('@')) {
-                                        email = hovercardId;
-                                        break;
-                                    }
-
-                                    // Check data-email
-                                    const dataEmail = el.getAttribute('data-email');
-                                    if (dataEmail && dataEmail.includes('@')) {
-                                        email = dataEmail;
-                                        break;
-                                    }
-
-                                    // Check aria-label
-                                    const ariaLabel = el.getAttribute('aria-label');
-                                    if (ariaLabel) {
-                                        const emailMatch = ariaLabel.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/gi);
-                                        if (emailMatch) {
-                                            email = emailMatch[0];
-                                            break;
-                                        }
-                                    }
-
-                                    // Check title
-                                    const title = el.getAttribute('title');
-                                    if (title) {
-                                        const emailMatch = title.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/gi);
-                                        if (emailMatch) {
-                                            email = emailMatch[0];
-                                            break;
-                                        }
-                                    }
-                                }
-
-                                // Get name (your existing getParticipantName function)
-                                const name = getParticipantName(element);
-
-                                return {
-                                    name,
-                                    email: email || 'Email not available',
-                                    isPinned: !!element.querySelector('[aria-label*="pin"], [data-is-pinned="true"]'),
-                                    isMuted: !!element.querySelector('[aria-label*="muted"], [data-is-muted="true"]'),
-                                    isVideoOff: !!element.querySelector('[aria-label*="camera off"], [data-is-camera-off="true"]')
-                                };
-                            }
-
-                            const participantElements = document.querySelectorAll('[data-participant-id], [role="listitem"]');
-                            const participants = Array.from(participantElements).map(element => getParticipantInfo(element));
-
-                            const inMeeting = document.querySelector('[aria-label*="Leave call"], [aria-label*="End call"]') !== null;
-
-                            return {
-                                tabId: window.location.href,
-                                inMeeting,
-                                count: participants.length,
-                                participants,
-                                url: window.location.href,
-                                title: document.title
-                            };
-                        }
-                    }, (results) => {
-                        if (chrome.runtime.lastError) {
-                            console.error('Script execution error:', chrome.runtime.lastError);
-                            // Return last known data if there's an error
-                            resolve(lastKnownParticipants);
-                            return;
-                        }
-                        const result = results?.[0]?.result;
-                        if (result && result.inMeeting && result.count > 0) {
-                            // Update last known participants if we have valid data
-                            lastKnownParticipants = result;
-                        }
-                        resolve(result || lastKnownParticipants);
-                    });
-                });
-            })).then(results => {
-                // Filter out errors and use last known data if needed
-                const activeMeetings = results.filter(result => result && (result.inMeeting || result === lastKnownParticipants));
-                
-                if (activeMeetings.length > 0) {
-                    // Show all active meetings
-                    activeMeetings.forEach(meeting => {
-                        meetHtml += `
-                            <div class="meet-active">
-                                <span class="material-icons" style="color: #4CAF50;">video_camera_front</span>
-                                <div class="meet-info">
-                                    <div class="meet-title">${meeting.title || 'Active Meeting'}</div>
-                                    <div class="meet-participants">
-                                        <span class="material-icons">group</span>
-                                        <span>${meeting.count} participants</span>
-                                    </div>
-                                    <div class="meet-url">${meeting.url}</div>
+                    ${active ? `
+                        <div class="meet-active">
+                            <span class="material-icons" style="color: #4CAF50;">video_camera_front</span>
+                            <div class="meet-info">
+                                <div class="meet-title">${data.title || 'Active Meeting'}</div>
+                                <div class="meet-participants">
+                                    <span class="material-icons">group</span>
+                                    <span>${data.count} participants</span>
                                 </div>
+                                <div class="meet-url">${data.url}</div>
                             </div>
-                        `;
-
-                        // Show participants for this meeting
-                        if (meeting.participants.length > 0) {
-                            let participantsHtml = `
-                                <div class="participants-container">
-                                    <div class="participants-header">
-                                        <span class="material-icons">people</span>
-                                        <span>Participants (${meeting.count})</span>
-                                    </div>
-                                    <div class="participants-list">
-                            `;
-                            
-                            meeting.participants.forEach(participant => {
-                                const isCurrentUser = participant.name.includes('You');
-                                participantsHtml += generateParticipantHTML(participant, isCurrentUser, meeting.tabId);
-                            });
-                            
-                            participantsHtml += `
-                                    </div>
-                                </div>
-                            `;
-                            
-                            meetParticipantsElement.innerHTML = participantsHtml;
-                        }
-                    });
-
-                    // Check for ended meetings
-                    if (previousMeetingData && !activeMeetings.some(m => m.url === previousMeetingData.url)) {
-                        savePreviousMeeting(previousMeetingData);
-                    }
-
-                    // Update previous meeting data
-                    previousMeetingData = activeMeetings[0];
-                } else {
-                    meetHtml += `
+                        </div>
+                    ` : `
                         <div class="meet-inactive">
                             <span class="material-icons" style="color: #666;">videocam_off</span>
                             <span>No active Google Meet sessions</span>
                         </div>
-                    `;
-                    meetParticipantsElement.innerHTML = '';
-                    lastKnownParticipants = { count: 0, participants: [], url: '', inMeeting: false };
+                    `}
+                </div>
+            </div>
+        `;
+    }
+
+    function updateParticipantsList(participants = []) {
+        if (participants.length === 0) {
+            meetParticipantsElement.innerHTML = '';
+            return;
+        }
+
+        let html = `
+            <div class="participants-container">
+                <div class="participants-header">
+                    <span class="material-icons">people</span>
+                    <span>Participants (${participants.length})</span>
+                </div>
+                <div class="participants-list">
+        `;
+
+        participants.forEach(p => {
+            html += `
+                <div class="participant-item ${p.isCurrentUser ? 'current-user' : ''}">
+                    <div class="participant-info">
+                        ${p.avatarSrc ? 
+                            `<img class="participant-avatar" src="${p.avatarSrc}" alt="">` :
+                            `<span class="material-icons">account_circle</span>`
+                        }
+                        <div class="participant-details">
+                            <div class="participant-name">
+                                ${p.name}
+                                ${p.isCurrentUser ? '<span class="current-user-badge">(You)</span>' : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += `
+                </div>
+            </div>
+        `;
+
+        meetParticipantsElement.innerHTML = html;
+    }
+
+    function checkGoogleMeet() {
+        chrome.tabs.query({ url: "*://meet.google.com/*" }, (tabs) => {
+            console.log('Found Meet tabs:', tabs?.length);
+
+            if (!tabs || tabs.length === 0) {
+                updateMeetStatus(false);
+                updateParticipantsList([]);
+                return;
+            }
+
+            const tab = tabs[0];
+            chrome.scripting.executeScript({
+                target: { tabId: tab.id },
+                function: () => {
+                    // Using the same selectors as background.js
+                    const participantElements = document.querySelectorAll([
+                        '[role="listitem"]',
+                        '[data-participant-id]',
+                        '[data-requested-participant-id]',
+                        '[class*="participant-item"]'
+                    ].join(','));
+
+                    const participants = Array.from(participantElements)
+                        .filter(element => {
+                            // Get name element using multiple possible selectors
+                            const nameElement = element.querySelector([
+                                '[data-self-name]',
+                                '[data-participant-name]',
+                                '.zWGUib',  // Google Meet's name class
+                                '[class*="participant-name"]',
+                                '[class*="roster-entry-name"]'
+                            ].join(','));
+
+                            return nameElement !== null;
+                        })
+                        .map(element => {
+                            // Get name
+                            const nameElement = element.querySelector([
+                                '[data-self-name]',
+                                '[data-participant-name]',
+                                '.zWGUib',
+                                '[class*="participant-name"]',
+                                '[class*="roster-entry-name"]'
+                            ].join(','));
+
+                            // Get avatar
+                            const avatarElement = element.querySelector('.KjWwNd');
+
+                            // Get role
+                            const roleElement = element.querySelector('.d93U2d');
+
+                            const name = nameElement?.textContent?.trim() || 'Unknown';
+                            const isCurrentUser = name.includes('(You)') || 
+                                               element.querySelector('.NnTWjc') !== null;
+
+                            return {
+                                name: name.replace('(You)', '').trim(),
+                                isCurrentUser,
+                                avatarSrc: avatarElement?.src || '',
+                                role: roleElement?.textContent?.trim() || '',
+                                isMuted: !!element.querySelector('[aria-label*="muted"]'),
+                                isVideoOff: !!element.querySelector('[aria-label*="camera off"]')
+                            };
+                        });
+
+                    console.log('Found participants:', participants.length);
+
+                    return {
+                        count: participants.length,
+                        participants,
+                        url: window.location.href,
+                        title: document.title,
+                        inMeeting: participants.length > 0
+                    };
+                }
+            }, (results) => {
+                if (chrome.runtime.lastError) {
+                    console.error('Script execution error:', chrome.runtime.lastError);
+                    updateMeetStatus(false);
+                    return;
                 }
 
-                meetHtml += `</div></div>`;
-                googleMeetElement.innerHTML = meetHtml;
+                const result = results?.[0]?.result;
+                if (result) {
+                    console.log('Meeting data:', result);
+                    updateMeetStatus(true, result);
+                    updateParticipantsList(result.participants);
+
+                    // Store the data
+                    chrome.storage.local.set({
+                        lastMeetingData: result
+                    });
+                }
             });
-        } else {
-            meetHtml += `
-                <div class="meet-inactive">
-                    <span class="material-icons" style="color: #666;">videocam_off</span>
-                    <span>No active Google Meet sessions</span>
-                </div>
-            </div></div>`;
-            googleMeetElement.innerHTML = meetHtml;
-            meetParticipantsElement.innerHTML = '';
-            lastKnownParticipants = { count: 0, participants: [], url: '', inMeeting: false };
-        }
+        });
+    }
+
+    // Initial check
+    checkGoogleMeet();
+
+    // Update every 2 seconds
+    const intervalId = setInterval(checkGoogleMeet, 2000);
+
+    // Cleanup on popup close
+    window.addEventListener('unload', () => {
+        clearInterval(intervalId);
     });
-}
-
-// Update Meet status more frequently (every 2 seconds)
-setInterval(checkGoogleMeet, 2000);
-
-// Initial Meet status check
-checkGoogleMeet();
+});
 
 // Function to control mic and camera
 function toggleMicCamera(tabId, type) {
@@ -435,36 +393,32 @@ function toggleMicCamera(tabId, type) {
 }
 
 // Update the participant item HTML generation
-function generateParticipantHTML(participant, isCurrentUser, tabId) {
+function generateParticipantHTML(participant) {
     return `
-        <div class="participant-item ${isCurrentUser ? 'current-user' : ''}">
+        <div class="participant-item">
             <div class="participant-info">
-                <span class="material-icons">account_circle</span>
+                ${participant.avatarSrc ? 
+                    `<img class="participant-avatar" src="${participant.avatarSrc}" alt="">` :
+                    `<span class="material-icons">account_circle</span>`
+                }
                 <div class="participant-details">
                     <div class="participant-name">
                         ${participant.name}
-                        ${isCurrentUser ? '<span class="current-user-badge">You</span>' : ''}
+                        ${participant.isCurrentUser ? '<span class="current-user-badge">(You)</span>' : ''}
+                        ${participant.role ? `<div class="participant-role">${participant.role}</div>` : ''}
                     </div>
-                    <div class="participant-email">${participant.email}</div>
                 </div>
             </div>
             <div class="participant-status">
-                ${participant.isPinned ? '<span class="material-icons" title="Pinned">push_pin</span>' : ''}
-                ${isCurrentUser ? `
-                    <button class="control-button ${participant.isMuted ? 'off' : 'on'}" 
-                            onclick="toggleMicCamera(${tabId}, 'mic')" 
-                            title="${participant.isMuted ? 'Unmute' : 'Mute'}">
-                        <span class="material-icons">${participant.isMuted ? 'mic_off' : 'mic'}</span>
-                    </button>
-                    <button class="control-button ${participant.isVideoOff ? 'off' : 'on'}" 
-                            onclick="toggleMicCamera(${tabId}, 'camera')" 
-                            title="${participant.isVideoOff ? 'Turn on camera' : 'Turn off camera'}">
-                        <span class="material-icons">${participant.isVideoOff ? 'videocam_off' : 'videocam'}</span>
-                    </button>
-                ` : `
-                    <span class="material-icons" title="${participant.isMuted ? 'Muted' : 'Unmuted'}">${participant.isMuted ? 'mic_off' : 'mic'}</span>
-                    <span class="material-icons" title="${participant.isVideoOff ? 'Camera Off' : 'Camera On'}">${participant.isVideoOff ? 'videocam_off' : 'videocam'}</span>
-                `}
+                ${participant.isPinned ? 
+                    '<span class="material-icons" title="Pinned">push_pin</span>' : ''
+                }
+                <span class="material-icons" title="${participant.isMuted ? 'Muted' : 'Unmuted'}">
+                    ${participant.isMuted ? 'mic_off' : 'mic'}
+                </span>
+                <span class="material-icons" title="${participant.isVideoOff ? 'Camera Off' : 'Camera On'}">
+                    ${participant.isVideoOff ? 'videocam_off' : 'videocam'}
+                </span>
             </div>
         </div>
     `;

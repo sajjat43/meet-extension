@@ -305,3 +305,18 @@ function processMeetingData(data, targetMeetingCode) {
             };
         });
 }
+
+// Add this function to check stored participants
+function checkStoredParticipants() {
+    chrome.storage.local.get(['participantData'], (result) => {
+        if (result.participantData?.participants) {
+            console.log('Current participants:', result.participantData.participants.map(p => ({
+                name: p.name,
+                email: p.email
+            })));
+        }
+    });
+}
+
+// Call this every few seconds to see updates
+setInterval(checkStoredParticipants, 5000);
