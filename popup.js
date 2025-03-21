@@ -318,6 +318,28 @@ document.addEventListener('DOMContentLoaded', () => {
                                 'div[jsname][class*="title"]'
                             ].join(','));
 
+                            if (!nameElement) return null;
+
+                            let name = nameElement.textContent?.trim() || 'Unknown';
+
+                            // Clean up duplicated names
+                            if (name.length > 0) {
+                                // Split the name in half and check if both halves are identical
+                                const halfLength = Math.floor(name.length / 2);
+                                const firstHalf = name.slice(0, halfLength);
+                                const secondHalf = name.slice(halfLength);
+                                
+                                if (firstHalf === secondHalf) {
+                                    name = firstHalf;
+                                } else {
+                                    // If the name is duplicated but not exactly in half
+                                    const parts = name.split(/(.+?)\1/);
+                                    if (parts.length > 1) {
+                                        name = parts[1];
+                                    }
+                                }
+                            }
+
                             // Get avatar with updated selectors
                             const avatarElement = element.querySelector([
                                 '.KjWwNd',
@@ -326,7 +348,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                 '[class*="profile-image"]'
                             ].join(','));
 
-                            const name = nameElement?.textContent?.trim() || 'Unknown';
                             const isCurrentUser = 
                                 name.includes('(You)') || 
                                 element.querySelector('[class*="current-user"]') !== null ||
