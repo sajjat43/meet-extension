@@ -276,65 +276,96 @@ document.addEventListener('DOMContentLoaded', () => {
             chrome.scripting.executeScript({
                 target: { tabId: tab.id },
                 function: () => {
-                    // Using the same selectors as background.js
+                    // Updated selectors for participants
                     const participantElements = document.querySelectorAll([
                         '[role="listitem"]',
                         '[data-participant-id]',
                         '[data-requested-participant-id]',
-                        '[class*="participant-item"]'
+                        '[class*="participant"]',
+                        // New selectors for latest Google Meet UI
+                        '[class*="roster-item"]',
+                        '[class*="attendee"]',
+                        'div[jscontroller][jsname][data-participant-id]'
                     ].join(','));
 
                     const participants = Array.from(participantElements)
                         .filter(element => {
-                            // Get name element using multiple possible selectors
-                            const nameElement = element.querySelector([
-                                '[data-self-name]',
-                                '[data-participant-name]',
-                                '.zWGUib',  // Google Meet's name class
-                                '[class*="participant-name"]',
-                                '[class*="roster-entry-name"]'
-                            ].join(','));
-
-                            return nameElement !== null;
-                        })
-                        .map(element => {
-                            // Get name
+                            // Updated name element selectors
                             const nameElement = element.querySelector([
                                 '[data-self-name]',
                                 '[data-participant-name]',
                                 '.zWGUib',
                                 '[class*="participant-name"]',
-                                '[class*="roster-entry-name"]'
+                                '[class*="roster-entry-name"]',
+                                // New selectors for latest Google Meet UI
+                                '[class*="XEazBc"]',
+                                '[class*="ZjFb7c"]',
+                                'div[jsname][class*="title"]'
                             ].join(','));
 
-                            // Get avatar
-                            const avatarElement = element.querySelector('.KjWwNd');
+                            return nameElement !== null;
+                        })
+                        .map(element => {
+                            // Get name with updated selectors
+                            const nameElement = element.querySelector([
+                                '[data-self-name]',
+                                '[data-participant-name]',
+                                '.zWGUib',
+                                '[class*="participant-name"]',
+                                '[class*="roster-entry-name"]',
+                                '[class*="XEazBc"]',
+                                '[class*="ZjFb7c"]',
+                                'div[jsname][class*="title"]'
+                            ].join(','));
 
-                            // Get role
-                            const roleElement = element.querySelector('.d93U2d');
+                            // Get avatar with updated selectors
+                            const avatarElement = element.querySelector([
+                                '.KjWwNd',
+                                'img[src*="googleusercontent"]',
+                                '[class*="avatar"]',
+                                '[class*="profile-image"]'
+                            ].join(','));
 
                             const name = nameElement?.textContent?.trim() || 'Unknown';
-                            const isCurrentUser = name.includes('(You)') || 
-                                               element.querySelector('.NnTWjc') !== null;
+                            const isCurrentUser = 
+                                name.includes('(You)') || 
+                                element.querySelector('[class*="current-user"]') !== null ||
+                                element.hasAttribute('data-is-self') ||
+                                element.querySelector('[class*="self"]') !== null;
+
+                            // Check for mute/video status with updated selectors
+                            const isMuted = !!element.querySelector([
+                                '[aria-label*="muted"]',
+                                '[data-is-muted="true"]',
+                                '[class*="muted"]'
+                            ].join(','));
+
+                            const isVideoOff = !!element.querySelector([
+                                '[aria-label*="camera off"]',
+                                '[data-is-camera-off="true"]',
+                                '[class*="camera-off"]'
+                            ].join(','));
 
                             return {
                                 name: name.replace('(You)', '').trim(),
                                 isCurrentUser,
                                 avatarSrc: avatarElement?.src || '',
-                                role: roleElement?.textContent?.trim() || '',
-                                isMuted: !!element.querySelector('[aria-label*="muted"]'),
-                                isVideoOff: !!element.querySelector('[aria-label*="camera off"]')
+                                isMuted,
+                                isVideoOff
                             };
                         });
-
-                    console.log('Found participants:', participants.length);
 
                     return {
                         count: participants.length,
                         participants,
                         url: window.location.href,
                         title: document.title,
-                        inMeeting: participants.length > 0
+                        inMeeting: participants.length > 0 || !!document.querySelector([
+                            '[aria-label*="Leave call"]',
+                            '[aria-label*="End call"]',
+                            '[data-tooltip*="Leave call"]',
+                            '[class*="leave-call"]'
+                        ].join(','))
                     };
                 }
             }, (results) => {
